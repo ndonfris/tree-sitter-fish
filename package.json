@@ -1,5 +1,5 @@
 {
-  "name": "tree-sitter-fish",
+  "name": "@esdmr/tree-sitter-fish",
   "version": "3.6.0",
   "description": "Fish tree-sitter grammar",
   "main": "tree-sitter-fish.wasm",
