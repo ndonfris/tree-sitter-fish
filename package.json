@@ -1,6 +1,6 @@
 {
-  "name": "@esdmr/tree-sitter-fish",
-  "version": "3.5.2-1+70640c0",
+  "name": "tree-sitter-fish",
+  "version": "3.6.0",
   "description": "Fish tree-sitter grammar",
   "main": "tree-sitter-fish.wasm",
   "exports": {
