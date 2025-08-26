@@ -24,9 +24,9 @@
   ],
   "author": "Krnik",
   "devDependencies": {
-    "@types/node": "^18.11.9",
-    "tree-sitter-cli": "^0.20.7",
-    "typescript": "^4.9.3"
+    "@types/node": "^18.19.123",
+    "tree-sitter-cli": "^0.20.8",
+    "typescript": "^4.9.5"
   },
   "repository": {
     "type": "git",

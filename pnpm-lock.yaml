@@ -9,19 +9,19 @@ importers:
   .:
     devDependencies:
       '@types/node':
-        specifier: ^18.11.9
-        version: 18.19.75
+        specifier: ^18.19.123
+        version: 18.19.123
       tree-sitter-cli:
-        specifier: ^0.20.7
+        specifier: ^0.20.8
         version: 0.20.8
       typescript:
-        specifier: ^4.9.3
+        specifier: ^4.9.5
         version: 4.9.5
 
 packages:
 
-  '@types/node@18.19.75':
-    resolution: {integrity: sha512-UIksWtThob6ZVSyxcOqCLOUNg/dyO1Qvx4McgeuhrEtHTLFTf7BBhEazaE4K806FGTPtzd/2sE90qn4fVr7cyw==}
+  '@types/node@18.19.123':
+    resolution: {integrity: sha512-K7DIaHnh0mzVxreCR9qwgNxp3MH9dltPNIEddW9MYUlcKAzm+3grKNSTe2vCJHI1FaLpvpL5JGJrz1UZDKYvDg==}
 
   tree-sitter-cli@0.20.8:
     resolution: {integrity: sha512-XjTcS3wdTy/2cc/ptMLc/WRyOLECRYcMTrSWyhZnj1oGSOWbHLTklgsgRICU3cPfb0vy+oZCC33M43u6R1HSCA==}
@@ -37,7 +37,7 @@ packages:
 
 snapshots:
 
-  '@types/node@18.19.75':
+  '@types/node@18.19.123':
     dependencies:
       undici-types: 5.26.5
 

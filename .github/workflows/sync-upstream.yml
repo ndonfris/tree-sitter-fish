@@ -1,0 +1,144 @@
+name: Sync Upstream and Republish
+
+on:
+  schedule:
+    # Check for new upstream releases every day at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  sync-and-republish:
+    name: Sync Upstream and Republish WASM
+    runs-on: ubuntu-latest
+    environment: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://github.com/ram02z/tree-sitter-fish.git || true
+          git fetch upstream
+
+      - name: Check for new upstream tags
+        id: check-tags
+        run: |
+          # Get the latest tag from upstream
+          LATEST_UPSTREAM_TAG=$(git tag -l --sort=-version:refname --merged upstream/master | head -n1)
+          
+          # Get the latest tag from our repo
+          LATEST_LOCAL_TAG=$(git tag -l --sort=-version:refname | head -n1)
+          
+          echo "Latest upstream tag: $LATEST_UPSTREAM_TAG"
+          echo "Latest local tag: $LATEST_LOCAL_TAG"
+          
+          if [ "$LATEST_UPSTREAM_TAG" != "$LATEST_LOCAL_TAG" ] && [ -n "$LATEST_UPSTREAM_TAG" ]; then
+            echo "new-tag=true" >> $GITHUB_OUTPUT
+            echo "upstream-tag=$LATEST_UPSTREAM_TAG" >> $GITHUB_OUTPUT
+            echo "New upstream tag found: $LATEST_UPSTREAM_TAG"
+          else
+            echo "new-tag=false" >> $GITHUB_OUTPUT
+            echo "No new upstream tags found"
+          fi
+
+      - name: Merge upstream changes
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: |
+          git checkout main
+          git merge upstream/master --no-edit
+          git push origin main
+
+      - name: Create and push new tag
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: |
+          NEW_TAG=${{ steps.check-tags.outputs.upstream-tag }}
+          git tag $NEW_TAG
+          git push origin $NEW_TAG
+
+      - name: Setup Node.js
+        if: steps.check-tags.outputs.new-tag == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: https://registry.npmjs.org
+
+      - name: Temporarily fix corepack bug
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: npm install -g corepack@latest
+
+      - name: Setup pnpm
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: |-
+          corepack enable
+          pnpm --version
+
+      - name: Get pnpm store directory
+        if: steps.check-tags.outputs.new-tag == 'true'
+        id: pnpm-cache
+        run: echo "pnpm_cache_dir=$(pnpm store path)" >>$GITHUB_OUTPUT
+
+      - name: Cache pnpm modules
+        if: steps.check-tags.outputs.new-tag == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.OS }}-pnpm-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-pnpm
+
+      - name: Setup emsdk
+        if: steps.check-tags.outputs.new-tag == 'true'
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Install packages
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: pnpm install
+
+      - name: Update package.json version
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: |
+          NEW_VERSION=${{ steps.check-tags.outputs.upstream-tag }}
+          # Remove 'v' prefix if present
+          NEW_VERSION=${NEW_VERSION#v}
+          
+          # Update package.json version
+          pnpm version $NEW_VERSION --no-git-tag-version
+          
+          # Commit version update
+          git add package.json
+          git commit -m "chore: update version to $NEW_VERSION"
+          git push origin main
+
+      - name: Build WASM
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: pnpm run build:wasm
+
+      - name: Create GitHub Release
+        if: steps.check-tags.outputs.new-tag == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.check-tags.outputs.upstream-tag }}
+          name: Release ${{ steps.check-tags.outputs.upstream-tag }}
+          body: |
+            Automated release synced from upstream https://github.com/ram02z/tree-sitter-fish
+            
+            This release includes the tree-sitter-fish.wasm file built from the latest upstream changes.
+          files: tree-sitter-fish.wasm
+          draft: false
+          prerelease: false
+
+      - name: Publish to npm
+        if: steps.check-tags.outputs.new-tag == 'true'
+        run: pnpm publish --no-git-checks --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_KEY }}
