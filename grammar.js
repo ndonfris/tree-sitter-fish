@@ -11,6 +11,7 @@ function regexChars(characters) {
 // https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%5B%3AWhite_Space%3DYes%3A%5D&g=&i=
 const WHITESPACE = /[\u0009-\u000D\u0085\u2028\u2029\u0020\u3000\u1680\u2000-\u2006\u2008-\u200A\u205F\u00A0\u2007\u202F]+/;
 // Set of characters that cannot start a word.
+// Note: '=' is excluded to support env var override syntax (FOO=bar command)
 const WORD_START_NEG_PATTERN = regexChars([
     '$',
     '*',
@@ -26,8 +27,10 @@ const WORD_START_NEG_PATTERN = regexChars([
     ';',
     '\\',
     '\\s',
+    '=',
 ]);
 // Set of characters that cannot continue a word.
+// Note: '=' is excluded to support env var override syntax (FOO=bar command)
 const WORD_CONTINUE_NEG_PATTERN = regexChars([
     '$',
     '*',
@@ -42,6 +45,7 @@ const WORD_CONTINUE_NEG_PATTERN = regexChars([
     ';',
     '\\',
     '\\s',
+    '=',
 ]);
 const WORD_PATTERN = new RegExp(`[^${WORD_START_NEG_PATTERN}][^${WORD_CONTINUE_NEG_PATTERN}]*`);
 module.exports = grammar({
@@ -50,6 +54,8 @@ module.exports = grammar({
         $._concat,
         $._brace_concat,
         $._concat_list,
+        $._override_var_name,
+        $._override_var_name_no_value, // NAME= when followed by whitespace (no value)
     ],
     inline: $ => [
         $._terminator,
@@ -88,7 +94,15 @@ module.exports = grammar({
         else_clause: $ => seq('else', $._terminator, optional(repeat1($._terminated_opt_statement))),
         begin_statement: $ => seq('begin', optional(repeat1($._terminated_opt_statement)), 'end'),
         comment: () => token(prec(-11, /#.*/)),
-        variable_name: () => /[a-zA-Z0-9_]+/,
+        variable_name: () => /[a-zA-Z0-9_][a-zA-Z0-9_\-]*/,
+        // Environment variable override (e.g., "FOO=bar" in "FOO=bar command")
+        // External scanner distinguishes between NAME=value and NAME= (no value)
+        // and shouldn't include trailing '=' in the name
+        override_variable: $ => choice(
+        // NAME=value (value immediately follows =, no whitespace)
+        seq(field('name', alias($._override_var_name, $.variable_name)), '=', field('value', $._expression)), 
+        // NAME= (no value, followed by whitespace)
+        field('name', alias($._override_var_name_no_value, $.variable_name))),
         variable_expansion: $ => prec.left(seq('$', choice($.variable_name, $.variable_expansion), repeat(seq($._concat_list, $.list_element_access)))),
         index: $ => choice($.integer, $.single_quote_string, $.variable_expansion, $.double_quote_string, $.command_substitution),
         range: $ => prec.right(2, seq(optional($.index), '..', optional($.index))),
@@ -102,11 +116,14 @@ module.exports = grammar({
         $.command_substitution)), '"'),
         single_quote_string: $ => seq('\'', repeat(choice(/[^'\\]+/, $.escape_sequence)), '\''),
         escape_sequence: () => token(seq('\\', token.immediate(choice(/[^xXuUc]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{0,2}/, /X[0-9a-fA-F]{0,2}/, /u[0-9a-fA-F]{0,4}/, /U[0-9a-fA-F]{0,8}/, /c[a-zA-Z]?/)))),
-        command: $ => prec.right(seq(field('name', $._expression), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression))))),
+        command: $ => prec.right(seq(repeat(field('override', $.override_variable)), field('name', $._expression), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression))))),
         stream_redirect: () => /\d*(>>|>|<)&[012-]/,
         direction: () => /(\d*|&)(>>?\??|<)/,
         file_redirect: $ => seq(field('operator', $.direction), field('destination', $._expression)),
-        _special_character: () => choice('[', ']'),
+        // Special characters that can appear in concatenations
+        // '=' is included to allow patterns like --foo=bar to work via concatenation
+        // '!=' is included as a single token for test command comparisons
+        _special_character: () => choice('[', ']', '=', '!='),
         concatenation: $ => seq(choice($._base_expression, $._special_character), repeat1(seq($._concat, choice($._base_expression, $._special_character, '#')))),
         _expression: $ => choice($._base_expression, $.concatenation, alias($._special_character, $.word)),
         _base_expression: $ => choice($.command_substitution, $.single_quote_string, $.double_quote_string, $.variable_expansion, $.word, $.integer, $.float, $.brace_expansion, $.escape_sequence, $.glob, $.home_dir_expansion),
