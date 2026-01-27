@@ -1,8 +1,11 @@
 #!/bin/bash
 
-parse_errors=''
+shopt -s globstar
 
-for file in ./examples/fish/share/functions/*.fish
+parse_errors=''
+dir="${1:-./examples/fish/share/functions}"
+
+for file in "$dir"/**/*.fish
 do
     ./node_modules/.bin/tree-sitter parse $file > /dev/null
 
@@ -12,5 +15,10 @@ do
     fi
 done
 
-echo "Parsing failed for following files:"
-printf $parse_errors
+if test -n "$parse_errors"; then
+    echo "Parsing failed for following files:"
+    printf "$parse_errors"
+    exit 1
+else
+    echo "All files parsed successfully"
+fi
