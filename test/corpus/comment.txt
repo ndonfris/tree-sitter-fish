@@ -61,3 +61,90 @@ true # a comment
   (command
     name: (word))
   (comment))
+
+================================================================================
+Escaped Comment - inside command arguments
+================================================================================
+
+echo 'This is a string with an escaped newline \'#' \
+      # second string
+      'this is another string'
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    (word)
+    (single_quote_string
+      (escape_sequence))
+    (escape_sequence)
+    (comment)
+    (single_quote_string)))
+
+================================================================================
+Escaped Comment -  doesn't break the pipe
+================================================================================
+
+set (
+    echo 1 \
+    | string trim )
+set (
+    echo 1 \
+    # This comment doesn't break the pipe node
+    | string trim )
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    (word)
+    (command_substitution
+      (pipe
+        (command
+          (word)
+          (integer)
+          (escape_sequence))
+        (command
+          (word)
+          (word)))))
+  (command
+    (word)
+    (command_substitution
+      (pipe
+        (command
+          (word)
+          (integer)
+          (escape_sequence)
+          (comment))
+        (command
+          (word)
+          (word))))))
+
+================================================================================
+Escaped Comment - in function header arguments  
+================================================================================
+
+function foo \
+    --description 'This is a description' \
+    # allows 2 arguments
+    # bar - argv[1]
+    # baz - argv[2]
+    --argument-names bar baz
+end
+
+--------------------------------------------------------------------------------
+
+(program
+  (function_definition
+    (word)
+    (escape_sequence)
+    (word)
+    (single_quote_string)
+    (escape_sequence)
+    (comment)
+    (comment)
+    (comment)
+    (word)
+    (word)
+    (word)))
+
