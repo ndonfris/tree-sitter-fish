@@ -1123,34 +1123,8 @@
                   "type": "FIELD",
                   "name": "argument",
                   "content": {
-                    "type": "CHOICE",
-                    "members": [
-                      {
-                        "type": "SEQ",
-                        "members": [
-                          {
-                            "type": "SYMBOL",
-                            "name": "escape_sequence"
-                          },
-                          {
-                            "type": "REPEAT1",
-                            "content": {
-                              "type": "ALIAS",
-                              "content": {
-                                "type": "SYMBOL",
-                                "name": "_line_continuation_comment"
-                              },
-                              "named": true,
-                              "value": "comment"
-                            }
-                          }
-                        ]
-                      },
-                      {
-                        "type": "SYMBOL",
-                        "name": "_expression"
-                      }
-                    ]
+                    "type": "SYMBOL",
+                    "name": "_expression"
                   }
                 }
               ]
@@ -1304,6 +1278,27 @@
         {
           "type": "SYMBOL",
           "name": "brace_expansion"
+        },
+        {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "escape_sequence"
+            },
+            {
+              "type": "REPEAT1",
+              "content": {
+                "type": "ALIAS",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "_line_continuation_comment"
+                },
+                "named": true,
+                "value": "comment"
+              }
+            }
+          ]
         },
         {
           "type": "SYMBOL",

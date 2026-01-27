@@ -150,6 +150,10 @@
           "named": true
         },
         {
+          "type": "comment",
+          "named": true
+        },
+        {
           "type": "concatenation",
           "named": true
         },
@@ -299,7 +303,7 @@
         ]
       },
       "name": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -308,6 +312,10 @@
           },
           {
             "type": "command_substitution",
+            "named": true
+          },
+          {
+            "type": "comment",
             "named": true
           },
           {
@@ -449,6 +457,10 @@
         },
         {
           "type": "command_substitution",
+          "named": true
+        },
+        {
+          "type": "comment",
           "named": true
         },
         {
@@ -802,7 +814,7 @@
     "named": true,
     "fields": {
       "destination": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -811,6 +823,10 @@
           },
           {
             "type": "command_substitution",
+            "named": true
+          },
+          {
+            "type": "comment",
             "named": true
           },
           {
@@ -881,6 +897,10 @@
           },
           {
             "type": "command_substitution",
+            "named": true
+          },
+          {
+            "type": "comment",
             "named": true
           },
           {
@@ -1004,7 +1024,7 @@
     "named": true,
     "fields": {
       "name": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -1013,6 +1033,10 @@
           },
           {
             "type": "command_substitution",
+            "named": true
+          },
+          {
+            "type": "comment",
             "named": true
           },
           {
@@ -1067,6 +1091,10 @@
           },
           {
             "type": "command_substitution",
+            "named": true
+          },
+          {
+            "type": "comment",
             "named": true
           },
           {
@@ -1679,7 +1707,7 @@
     "named": true,
     "fields": {},
     "children": {
-      "multiple": false,
+      "multiple": true,
       "required": false,
       "types": [
         {
@@ -1688,6 +1716,10 @@
         },
         {
           "type": "command_substitution",
+          "named": true
+        },
+        {
+          "type": "comment",
           "named": true
         },
         {
@@ -1753,7 +1785,7 @@
     "named": true,
     "fields": {
       "value": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
@@ -1762,6 +1794,10 @@
           },
           {
             "type": "command_substitution",
+            "named": true
+          },
+          {
+            "type": "comment",
             "named": true
           },
           {

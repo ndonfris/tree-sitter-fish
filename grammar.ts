@@ -313,10 +313,7 @@ module.exports = grammar({
             field('name', $._expression),
             repeat(choice(
                 field('redirect', choice($.file_redirect, $.stream_redirect)),
-                field('argument', choice(
-                  seq($.escape_sequence, repeat1(alias($._line_continuation_comment, $.comment))),
-                  $._expression
-                )),
+                field('argument', $._expression),
             )),
         )),
 
@@ -355,6 +352,7 @@ module.exports = grammar({
             $.integer,
             $.float,
             $.brace_expansion,
+            seq($.escape_sequence, repeat1(alias($._line_continuation_comment, $.comment))),
             $.escape_sequence,
             $.glob,
             $.home_dir_expansion,
