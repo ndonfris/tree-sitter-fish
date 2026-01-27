@@ -227,6 +227,10 @@ module.exports = grammar({
 
         comment: () => token(prec(-11, /#.*/)),
 
+        // Comment that includes trailing newline, used in line continuations
+        // Higher precedence than regular comment so it's preferred in that context
+        _line_continuation_comment: () => token(prec(10, /#.*\r?\n/)),
+
         variable_name: () => /[a-zA-Z0-9_]+/,
 
         variable_expansion: $ => prec.left(seq(
@@ -309,7 +313,10 @@ module.exports = grammar({
             field('name', $._expression),
             repeat(choice(
                 field('redirect', choice($.file_redirect, $.stream_redirect)),
-                field('argument', $._expression),
+                field('argument', choice(
+                  seq($.escape_sequence, repeat1(alias($._line_continuation_comment, $.comment))),
+                  $._expression
+                )),
             )),
         )),
 

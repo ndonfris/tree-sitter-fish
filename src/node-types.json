@@ -253,6 +253,10 @@
             "named": true
           },
           {
+            "type": "comment",
+            "named": true
+          },
+          {
             "type": "concatenation",
             "named": true
           },

@@ -88,6 +88,9 @@ module.exports = grammar({
         else_clause: $ => seq('else', $._terminator, optional(repeat1($._terminated_opt_statement))),
         begin_statement: $ => seq('begin', optional(repeat1($._terminated_opt_statement)), 'end'),
         comment: () => token(prec(-11, /#.*/)),
+        // Comment that includes trailing newline, used in line continuations
+        // Higher precedence than regular comment so it's preferred in that context
+        _line_continuation_comment: () => token(prec(10, /#.*\r?\n/)),
         variable_name: () => /[a-zA-Z0-9_]+/,
         variable_expansion: $ => prec.left(seq('$', choice($.variable_name, $.variable_expansion), repeat(seq($._concat_list, $.list_element_access)))),
         index: $ => choice($.integer, $.single_quote_string, $.variable_expansion, $.double_quote_string, $.command_substitution),
@@ -102,7 +105,7 @@ module.exports = grammar({
         $.command_substitution)), '"'),
         single_quote_string: $ => seq('\'', repeat(choice(/[^'\\]+/, $.escape_sequence)), '\''),
         escape_sequence: () => token(seq('\\', token.immediate(choice(/[^xXuUc]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{0,2}/, /X[0-9a-fA-F]{0,2}/, /u[0-9a-fA-F]{0,4}/, /U[0-9a-fA-F]{0,8}/, /c[a-zA-Z]?/)))),
-        command: $ => prec.right(seq(field('name', $._expression), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression))))),
+        command: $ => prec.right(seq(field('name', $._expression), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', choice(seq($.escape_sequence, repeat1(alias($._line_continuation_comment, $.comment))), $._expression)))))),
         stream_redirect: () => /\d*(>>|>|<)&[012-]/,
         direction: () => /(\d*|&)(>>?\??|<)/,
         file_redirect: $ => seq(field('operator', $.direction), field('destination', $._expression)),
