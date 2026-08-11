@@ -51,6 +51,8 @@ else
     begin; end
 end
 
+set x (if true; echo yes; else echo no; end)
+
 --------------------------------------------------------------------------------
 
 (program
@@ -66,7 +68,21 @@ end
     condition: (command
       name: (word))
     (else_clause
-      (begin_statement))))
+      (begin_statement)))
+  (command
+    name: (word)
+    argument: (word)
+    argument: (command_substitution
+      (if_statement
+        condition: (command
+          name: (word))
+        (command
+          name: (word)
+          argument: (word))
+        (else_clause
+          (command
+            name: (word)
+            argument: (word)))))))
 
 ================================================================================
 If Statement - else if

@@ -315,10 +315,6 @@
             "named": true
           },
           {
-            "type": "escape_sequence",
-            "named": true
-          },
-          {
             "type": "float",
             "named": true
           },
@@ -792,6 +788,11 @@
         }
       ]
     }
+  },
+  {
+    "type": "escape_sequence",
+    "named": true,
+    "fields": {}
   },
   {
     "type": "file_redirect",
@@ -1516,6 +1517,7 @@
   {
     "type": "program",
     "named": true,
+    "root": true,
     "fields": {},
     "children": {
       "multiple": true,
@@ -2069,6 +2071,10 @@
     "named": false
   },
   {
+    "type": "_line_continuation",
+    "named": false
+  },
+  {
     "type": "and",
     "named": false
   },
@@ -2086,7 +2092,8 @@
   },
   {
     "type": "comment",
-    "named": true
+    "named": true,
+    "extra": true
   },
   {
     "type": "continue",
@@ -2103,10 +2110,6 @@
   {
     "type": "end",
     "named": false
-  },
-  {
-    "type": "escape_sequence",
-    "named": true
   },
   {
     "type": "float",

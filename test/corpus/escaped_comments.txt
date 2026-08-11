@@ -1,0 +1,388 @@
+================================================================================
+Escaped Comment - Single comment line inside a line continuation
+================================================================================
+
+echo foo \
+    # single comment
+    bar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence)
+    (comment)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Comment at column zero after a continuation (issue #30)
+================================================================================
+
+echo foo \
+# comment at start of line
+bar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence)
+    (comment)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Multiple consecutive comment lines inside one continuation
+================================================================================
+
+echo foo \
+    # first comment
+    # second comment
+    # third comment
+    bar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence)
+    (comment)
+    (comment)
+    (comment)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Comments between every continuation line (fish-shell#983)
+================================================================================
+
+echo long \
+    # important comments
+    very long \
+    # read
+    more
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence)
+    (comment)
+    argument: (word)
+    argument: (word)
+    argument: (escape_sequence)
+    (comment)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Real-world git invocation split across comment-annotated lines
+================================================================================
+
+command \
+    # use default git avoiding aliases
+    git \
+    # pull sub command
+    pull \
+    --rebase \
+    origin \
+    master
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (escape_sequence)
+    (comment)
+    argument: (word)
+    argument: (escape_sequence)
+    (comment)
+    argument: (word)
+    argument: (escape_sequence)
+    argument: (word)
+    argument: (escape_sequence)
+    argument: (word)
+    argument: (escape_sequence)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Plain continuation without comments (regression)
+================================================================================
+
+echo foo \
+    bar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Backslash-space before a same-line comment is not a continuation
+================================================================================
+
+echo hi \  # same-line comment
+echo again
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence))
+  (comment)
+  (command
+    name: (word)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Blank line after a continuation terminates the command
+================================================================================
+
+echo foo \
+
+echo bar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence))
+  (command
+    name: (word)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Comment line followed by a blank line terminates the command
+================================================================================
+
+echo foo \
+    # dangling comment
+
+echo bar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (escape_sequence))
+  (comment)
+  (command
+    name: (word)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Continuation with comment inside a pipeline
+================================================================================
+
+echo hi | \
+    # piped through
+    cat
+
+--------------------------------------------------------------------------------
+
+(program
+  (pipe
+    (command
+      name: (word)
+      argument: (word))
+    (comment)
+    (command
+      name: (word))))
+
+================================================================================
+Escaped Comment - Escape sequences in words are unaffected (regression)
+================================================================================
+
+echo \n foo\tbar
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (escape_sequence)
+    argument: (concatenation
+      (word)
+      (escape_sequence)
+      (word))))
+
+================================================================================
+Escaped Comment - Continued comment at EOF does not require a terminator
+================================================================================
+
+cmd \
+#
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (escape_sequence))
+  (comment))
+
+================================================================================
+Escaped Comment - Consecutive comments continue into an argument at EOF
+================================================================================
+
+cmd \
+#
+#
+#
+--foo
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (escape_sequence)
+    (comment)
+    (comment)
+    (comment)
+    argument: (word)))
+
+================================================================================
+Escaped Comment - Backslash-space at EOL ends the command without a missing token
+================================================================================
+
+cmd \ 
+#    ^ space after backslash is not a continuation
+#
+#
+--foo
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (escape_sequence))
+  (comment)
+  (comment)
+  (comment)
+  (command
+    name: (word)))
+
+================================================================================
+Escaped Comment - Continued command collects a leading pipe after a comment
+================================================================================
+
+string replace -rfi '^\s*Include\s+' '' <$config \
+                    # Normalize whitespace
+                    | string trim | string replace -r -a '\s+' ' '
+
+--------------------------------------------------------------------------------
+
+(program
+  (pipe
+    (command
+      name: (word)
+      argument: (word)
+      argument: (word)
+      argument: (single_quote_string
+        (escape_sequence)
+        (escape_sequence))
+      argument: (single_quote_string)
+      redirect: (file_redirect
+        operator: (direction)
+        destination: (variable_expansion
+          (variable_name)))
+      argument: (escape_sequence))
+    (comment)
+    (pipe
+      (command
+        name: (word)
+        argument: (word))
+      (command
+        name: (word)
+        argument: (word)
+        argument: (word)
+        argument: (word)
+        argument: (single_quote_string
+          (escape_sequence))
+        argument: (single_quote_string)))))
+
+================================================================================
+Escaped Comment - Operator with continued comment inside remains part of the pipe
+================================================================================
+
+set (
+    echo 1 \
+    | string trim )
+set (
+    echo 1 \
+    # This comment remains inside the pipe node
+    | string trim )
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    (word)
+    (command_substitution
+      (pipe
+        (command
+          (word)
+          (integer)
+          (escape_sequence))
+        (command
+          (word)
+          (word)))))
+  (command
+    (word)
+    (command_substitution
+      (pipe
+        (command
+          (word)
+          (integer)
+          (escape_sequence))
+        (comment)
+        (command
+          (word)
+          (word))))))
+
+================================================================================
+Escaped Comment - Continuation state does not leak into quoted hash lines
+================================================================================
+
+printf \
+  $(true &&
+    echo "\
+# nested text") \
+  "\
+# outer text"
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (escape_sequence)
+    argument: (command_substitution
+      (conditional_execution
+        (command
+          name: (word))
+        (command
+          name: (word)
+          argument: (double_quote_string
+            (escape_sequence)))))
+    argument: (escape_sequence)
+    argument: (double_quote_string
+      (escape_sequence))))
