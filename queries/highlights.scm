@@ -17,15 +17,40 @@
   (stream_redirect)
 ] @operator
 
-; match operators of test command
-(command
-  name: (word) @function (#match? @function "^test$")
-  argument: (word) @operator (#match? @operator "^(!?=|-[a-zA-Z]+)$"))
+(command name: (word) @function)
 
-; match operators of [ command
+; Match the opening bracket of the [ command independently.
 (command
-  name: (word) @punctuation.bracket (#match? @punctuation.bracket "^\\[$")
-  argument: (word) @operator (#match? @operator "^(!?=|-[a-zA-Z]+)$"))
+  name: (word) @punctuation.bracket
+  (#match? @punctuation.bracket "^\\[$"))
+
+; Match all arguments of test and [ in one query match. A separate match for
+; each operator repeats the command-name capture, causing the highlighter to
+; discard earlier operators when a command contains several of them.
+(command
+  name: (word) @_test_command
+  [
+    argument: (word) @operator
+    argument: (_) @_test_operand
+    redirect: (_) @_test_redirect
+  ]*
+  (#any-of? @_test_command "test" "[")
+  (#any-of? @operator
+    "=" "!="
+    "-a" "-o"
+    "-b" "-c" "-d" "-e" "-f" "-g" "-G" "-k" "-L" "-O"
+    "-p" "-r" "-s" "-S" "-t" "-u" "-w" "-x"
+    "-ef" "-nt" "-ot"
+    "-n" "-z"
+    "-eq" "-ne" "-gt" "-ge" "-lt" "-le")
+  (#not-any-of? @_test_operand
+    "=" "!="
+    "-a" "-o"
+    "-b" "-c" "-d" "-e" "-f" "-g" "-G" "-k" "-L" "-O"
+    "-p" "-r" "-s" "-S" "-t" "-u" "-w" "-x"
+    "-ef" "-nt" "-ot"
+    "-n" "-z"
+    "-eq" "-ne" "-gt" "-ge" "-lt" "-le"))
 
 (variable_expansion) @constant
 
@@ -38,7 +63,6 @@
 "," @punctuation.delimiter
 
 (function_definition name: [(word) (concatenation)] @function)
-(command name: (word) @function)
 
 [
  "switch"
