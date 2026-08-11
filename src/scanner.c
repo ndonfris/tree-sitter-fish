@@ -278,9 +278,9 @@ bool tree_sitter_fish_external_scanner_scan(
                 lexer->result_symbol = CONCAT;
                 return true;
             }
-            if (!valid_symbols[LINE_CONTINUATION]) {
-                return false;
-            }
+            // LINE_CONTINUATION must be valid here: the enclosing branch
+            // requires LINE_CONTINUATION or CONCAT, and CONCAT was just ruled
+            // out above.
             consume_newline(lexer);
             lexer->mark_end(lexer);
             lexer->result_symbol = LINE_CONTINUATION;

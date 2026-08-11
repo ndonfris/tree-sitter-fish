@@ -53,9 +53,6 @@ module.exports = grammar({
         $._begin_brace,
         $._string_line_continuation,
         $.line_continuation,
-        // A comment on a line-continuation line, produced by the external
-        // scanner so it can swallow its trailing newline (see src/scanner.c).
-        // Normal comments are handled by the internal `comment` rule below.
         $._continued_comment,
         $._continued_newline,
         $._end_continuation,
@@ -79,7 +76,7 @@ module.exports = grammar({
         // connects the right-hand command, not an expression of its own. Alias
         // it to an anonymous token so it remains absent from the tree while the
         // external scanner keeps intervening comments transparent.
-        pipe: $ => prec.right(seq($._statement, choice('&|', '2>|', '|'), optional(alias($.line_continuation, '_line_continuation')), optional($._end_continuation), $._statement)),
+        pipe: $ => prec.right(seq($._statement, choice('&|', '2>|', '|'), optional(alias($.line_continuation, '_line_continuation')), $._statement)),
         redirect_statement: $ => seq($._statement, choice($.file_redirect, $.stream_redirect)),
         _terminator: () => choice(';', '&', '\n', '\r', '\r\n'),
         _statement: $ => choice($.conditional_execution, $.pipe, $.command, $.redirect_statement, $.begin_statement, $.if_statement, $.while_statement, $.for_statement, $.switch_statement, $.function_definition, $.break, $.continue, $.return, $.negated_statement),
@@ -101,17 +98,16 @@ module.exports = grammar({
         for_statement: $ => seq('for', field('variable', $.variable_name), 'in', repeat1(field('value', $._expression)), $._terminator, optional(repeat1($._terminated_statement)), 'end'),
         while_statement: $ => seq('while', field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement)), 'end'),
         if_statement: $ => seq('if', field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement)), repeat($.else_if_clause), optional($.else_clause), 'end'),
+        // `prec` outranks `else_clause` 
         else_if_clause: $ => prec(1, seq(seq('else', 'if'), field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement)))),
-        else_clause: $ => seq('else', choice(seq($._terminator, optional(repeat1($._terminated_opt_statement))), seq($._statement, $._terminator, optional(repeat1($._terminated_opt_statement))))),
+        else_clause: $ => seq('else', repeat1($._terminated_opt_statement)),
         /* Syntax `{ [COMMANDS ...] }` added in 4.1.0 */
         begin_statement: $ => choice(seq('begin', optional(repeat1($._terminated_opt_statement)), 'end'), seq(alias($._begin_brace, '{'), repeat($._terminated_opt_statement), optional($._statement), '}')),
         // Ordinary comments. A comment on a line-continuation line is instead
-        // matched by the external `_continued_comment` token (see src/scanner.c),
-        // which swallows its own trailing newline so the newline does not
-        // terminate the statement -- matching fish's own tokenizer.
+        // matched by the external `_continued_comment` token (see src/scanner.c)
         comment: () => token(prec(-11, /#.*/)),
-        // Wrapper so the external continuation-comment token appears as a
-        // `comment` node in the tree (extras cannot alias an external directly).
+        // Swallow the `_continued_comment` token from the external scanner 
+        // and alias it to a comment node so it is included in the tree.
         _continued_comment_node: $ => alias($._continued_comment, $.comment),
         variable_name: () => /[a-zA-Z0-9_]+/,
         variable_expansion: $ => prec.left(seq('$', choice($.variable_name, $.variable_expansion), repeat(seq($._concat_list, $.list_element_access)))),
@@ -119,38 +115,26 @@ module.exports = grammar({
         range: $ => prec.right(2, seq(optional($.index), '..', optional($.index))),
         list_element_access: $ => seq('[', repeat(choice($.index, $.range)), ']'),
         brace_expansion: $ => prec.right(seq('{', seq(optional($._brace_expression), repeat(seq(',', optional($._brace_expression)))), '}')),
-        double_quote_string: $ => seq('"', repeat(choice(/[^\$\\"]+/, $.variable_expansion, alias($._string_line_continuation, $.escape_sequence), alias($._string_escape_sequence, $.escape_sequence), alias($._command_substitution_dollar, $.command_substitution))), '"'),
-        single_quote_string: $ => seq('\'', repeat(choice(/[^'\\]+/, alias($._string_line_continuation, $.escape_sequence), alias($._string_escape_sequence, $.escape_sequence))), '\''),
+        double_quote_string: $ => seq('"', repeat(choice(/[^\$\\"]+/, $.variable_expansion, alias($._string_line_continuation, $.escape_sequence), $.escape_sequence, alias($._command_substitution_dollar, $.command_substitution))), '"'),
+        single_quote_string: $ => seq('\'', repeat(choice(/[^'\\]+/, alias($._string_line_continuation, $.escape_sequence), $.escape_sequence)), '\''),
         // Escape sequences outside of quoted strings. A backslash directly
         // followed by a newline is *not* an escape sequence here -- it is a line
         // continuation, produced by the external scanner (see src/scanner.c) so
         // that comment-annotated continuations can be handled statefully.
         escape_sequence: () => token(seq('\\', token.immediate(choice(/[^xXuUc\r\n]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{0,2}/, /X[0-9a-fA-F]{0,2}/, /u[0-9a-fA-F]{0,4}/, /U[0-9a-fA-F]{0,8}/, /c[a-zA-Z]?/)))),
-        // Inside a quoted string, `\` + newline is a valid line continuation and
-        // is represented as an escape_sequence, so this variant still accepts a
-        // trailing newline.
-        _string_escape_sequence: () => token(seq('\\', token.immediate(choice(/[^xXuUc\r\n]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{0,2}/, /X[0-9a-fA-F]{0,2}/, /u[0-9a-fA-F]{0,4}/, /U[0-9a-fA-F]{0,8}/, /c[a-zA-Z]?/)))),
-        command: $ => prec.right(seq(
-        // A standalone escape cannot be a command name. In particular,
-        // this prevents the `line_continuation` token (which is exposed as
-        // an escape_sequence) after a pipe from satisfying this field.
-        field('name', $._command_name), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression), $._end_continuation)))),
-        _command_name: $ => choice($._base_command_name, alias($._command_name_concatenation, $.concatenation), alias($._special_character, $.word)),
-        _base_command_name: $ => choice($.command_substitution, $.single_quote_string, $.double_quote_string, $.variable_expansion, $.word, $.integer, $.float, $.brace_expansion, $.glob, $.home_dir_expansion),
-        _command_name_concatenation: $ => seq(
-        // An ordinary escape may begin a larger command-name
-        // concatenation (e.g. `\$$CMD_REF`), but the external line
-        // continuation is a distinct grammar symbol and cannot do so.
-        choice($._base_command_name, $.escape_sequence, $._special_character), repeat1(seq($._concat, choice($._base_expression, $._special_character, '#')))),
+        command: $ => prec.right(seq(field('name', $._command_name), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression), $._end_continuation)))),
+        _command_name: $ => choice($._base_word, $.concatenation, alias($._special_character, $.word)),
+        // Every base expression except the two escape forms, which are added
+        // back by `_base_expression`. Kept separate so a bare escape cannot
+        // stand alone as a command name -- see the note on `command` above.
+        _base_word: $ => choice($.command_substitution, $.single_quote_string, $.double_quote_string, $.variable_expansion, $.word, $.integer, $.float, $.brace_expansion, $.glob, $.home_dir_expansion),
         stream_redirect: () => /\d*(>>|>|<)&[012-]/,
         direction: () => /(\d*|&)(>>?\??|<)/,
         file_redirect: $ => seq(field('operator', $.direction), field('destination', $._expression)),
         _special_character: () => choice('[', ']'),
         concatenation: $ => seq(choice($._base_expression, $._special_character), repeat1(seq($._concat, choice($._base_expression, $._special_character, '#')))),
         _expression: $ => choice($._base_expression, $.concatenation, alias($._special_character, $.word)),
-        _base_expression: $ => choice($.command_substitution, $.single_quote_string, $.double_quote_string, $.variable_expansion, $.word, $.integer, $.float, $.brace_expansion, $.escape_sequence, 
-        // A `\`+newline line continuation, produced by the external scanner.
-        alias($.line_continuation, $.escape_sequence), $.glob, $.home_dir_expansion),
+        _base_expression: $ => choice($._base_word, $.escape_sequence, alias($.line_continuation, $.escape_sequence)),
         brace_concatenation: $ => seq(choice($._base_brace_expression, $.brace_expansion), repeat1(seq($._brace_concat, choice($._base_brace_expression, $.brace_expansion)))),
         _brace_expression: $ => choice(alias($.brace_concatenation, $.concatenation), $._base_brace_expression, $.brace_expansion),
         _base_brace_expression: $ => choice($.command_substitution, $.single_quote_string, $.double_quote_string, $.variable_expansion, alias($.brace_word, $.word), $.integer, $.float, $.escape_sequence, $.glob),

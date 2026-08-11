@@ -790,11 +790,6 @@
     }
   },
   {
-    "type": "escape_sequence",
-    "named": true,
-    "fields": {}
-  },
-  {
     "type": "file_redirect",
     "named": true,
     "fields": {
@@ -2110,6 +2105,10 @@
   {
     "type": "end",
     "named": false
+  },
+  {
+    "type": "escape_sequence",
+    "named": true
   },
   {
     "type": "float",
