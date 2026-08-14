@@ -230,15 +230,18 @@ module.exports = grammar({
             'end'
         ),
 
-        else_if_clause: $ => seq(
+        else_if_clause: $ => prec(1, seq(
             seq('else', 'if'),
             field('condition', $._terminated_statement),
             optional(repeat1($._terminated_opt_statement)),
-        ),
+        )),
 
         else_clause: $ => seq(
             'else',
-            $._terminator,
+            choice(
+                $._terminator,
+                $._terminated_statement,
+            ),
             optional(repeat1($._terminated_opt_statement)),
         ),
 

@@ -51,6 +51,8 @@ else
     begin; end
 end
 
+if true; else echo statement; end
+
 --------------------------------------------------------------------------------
 
 (program
@@ -66,7 +68,14 @@ end
     condition: (command
       name: (word))
     (else_clause
-      (begin_statement))))
+      (begin_statement)))
+  (if_statement
+    condition: (command
+      name: (word))
+    (else_clause
+      (command
+        name: (word)
+        argument: (word)))))
 
 ================================================================================
 If Statement - else if

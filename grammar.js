@@ -91,8 +91,8 @@ module.exports = grammar({
         for_statement: $ => seq('for', field('variable', $.variable_name), 'in', repeat1(choice(field('value', $._expression), $._continuation)), $._terminator, optional(repeat1($._terminated_statement)), 'end'),
         while_statement: $ => seq('while', field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement)), 'end'),
         if_statement: $ => seq('if', field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement)), repeat($.else_if_clause), optional($.else_clause), 'end'),
-        else_if_clause: $ => seq(seq('else', 'if'), field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement))),
-        else_clause: $ => seq('else', $._terminator, optional(repeat1($._terminated_opt_statement))),
+        else_if_clause: $ => prec(1, seq(seq('else', 'if'), field('condition', $._terminated_statement), optional(repeat1($._terminated_opt_statement)))),
+        else_clause: $ => seq('else', choice($._terminator, $._terminated_statement), optional(repeat1($._terminated_opt_statement))),
         /* Syntax `{ [COMMANDS ...] }` added in 4.1.0 */
         begin_statement: $ => choice(seq('begin', optional(repeat1($._terminated_opt_statement)), 'end'), seq(alias($._begin_brace, '{'), repeat($._terminated_opt_statement), optional($._statement), '}')),
         comment: () => token(prec(-11, /#.*/)),
