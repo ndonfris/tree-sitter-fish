@@ -1133,12 +1133,69 @@
         ]
       }
     },
+    "variable_assignment": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "variable_name",
+          "content": {
+            "type": "ALIAS",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_variable_assignment_name"
+            },
+            "named": true,
+            "value": "word"
+          }
+        },
+        {
+          "type": "IMMEDIATE_TOKEN",
+          "content": {
+            "type": "STRING",
+            "value": "="
+          }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "_concat"
+                },
+                {
+                  "type": "FIELD",
+                  "name": "value",
+                  "content": {
+                    "type": "SYMBOL",
+                    "name": "_expression"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        }
+      ]
+    },
     "command": {
       "type": "PREC_RIGHT",
       "value": 0,
       "content": {
         "type": "SEQ",
         "members": [
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "SYMBOL",
+              "name": "variable_assignment"
+            }
+          },
           {
             "type": "FIELD",
             "name": "name",
@@ -1469,8 +1526,24 @@
       }
     },
     "word": {
-      "type": "PATTERN",
-      "value": "[^\\$\\*~#\\(\\)\\{\\}\\[\\]<>\"'&\\|;\\\\\\s][^\\$\\*~\\(\\)\\{\\}\\[\\]<>\"'&\\|;\\\\\\s]*"
+      "type": "TOKEN",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "!="
+          },
+          {
+            "type": "STRING",
+            "value": "="
+          },
+          {
+            "type": "PATTERN",
+            "value": "[^\\$\\*~#\\(\\)\\{\\}\\[\\]<>\"'&\\|;\\\\\\s=][^\\$\\*~\\(\\)\\{\\}\\[\\]<>\"'&\\|;\\\\\\s=]*"
+          }
+        ]
+      }
     },
     "brace_word": {
       "type": "PATTERN",
@@ -1505,6 +1578,10 @@
     {
       "type": "SYMBOL",
       "name": "_begin_brace"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "_variable_assignment_name"
     }
   ],
   "inline": [

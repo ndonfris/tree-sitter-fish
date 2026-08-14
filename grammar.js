@@ -26,6 +26,7 @@ const WORD_START_NEG_PATTERN = regexChars([
     ';',
     '\\',
     '\\s',
+    '=',
 ]);
 // Set of characters that cannot continue a word.
 const WORD_CONTINUE_NEG_PATTERN = regexChars([
@@ -42,6 +43,7 @@ const WORD_CONTINUE_NEG_PATTERN = regexChars([
     ';',
     '\\',
     '\\s',
+    '=',
 ]);
 const WORD_PATTERN = new RegExp(`[^${WORD_START_NEG_PATTERN}][^${WORD_CONTINUE_NEG_PATTERN}]*`);
 module.exports = grammar({
@@ -51,6 +53,7 @@ module.exports = grammar({
         $._brace_concat,
         $._concat_list,
         $._begin_brace,
+        $._variable_assignment_name,
     ],
     inline: $ => [
         $._terminator,
@@ -101,7 +104,11 @@ module.exports = grammar({
         double_quote_string: $ => seq('"', repeat(choice(/[^\$\\"]+/, $.variable_expansion, $.escape_sequence, alias($._command_substitution_dollar, $.command_substitution))), '"'),
         single_quote_string: $ => seq('\'', repeat(choice(/[^'\\]+/, $.escape_sequence)), '\''),
         escape_sequence: () => token(seq('\\', token.immediate(choice(/[^xXuUc]/, /[0-7]{1,3}/, /x[0-9a-fA-F]{0,2}/, /X[0-9a-fA-F]{0,2}/, /u[0-9a-fA-F]{0,4}/, /U[0-9a-fA-F]{0,8}/, /c[a-zA-Z]?/)))),
-        command: $ => prec.right(seq(field('name', $._expression), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression))))),
+        variable_assignment: $ => seq(field('variable_name', alias($._variable_assignment_name, $.word)), token.immediate('='), optional(seq(
+        // The existing zero-width concat marker verifies that a value
+        // starts immediately after `=`; whitespace means an empty value.
+        $._concat, field('value', $._expression)))),
+        command: $ => prec.right(seq(repeat($.variable_assignment), field('name', $._expression), repeat(choice(field('redirect', choice($.file_redirect, $.stream_redirect)), field('argument', $._expression))))),
         stream_redirect: () => /\d*(>>|>|<)&[012-]/,
         direction: () => /(\d*|&)(>>?\??|<)/,
         file_redirect: $ => seq(field('operator', $.direction), field('destination', $._expression)),
@@ -114,7 +121,10 @@ module.exports = grammar({
         _base_brace_expression: $ => choice($.command_substitution, $.single_quote_string, $.double_quote_string, $.variable_expansion, alias($.brace_word, $.word), $.integer, $.float, $.escape_sequence, $.glob),
         home_dir_expansion: () => '~',
         glob: () => token(repeat1('*')),
-        word: () => WORD_PATTERN,
+        // Equality operators remain ordinary words for Fish's `test` and `[`
+        // commands, while `=` stays excluded from all other word contents so
+        // assignment boundaries remain structured.
+        word: () => token(choice('!=', '=', WORD_PATTERN)),
         brace_word: () => new RegExp(`[^${regexChars(['$', '\'', '*', '"', ',', '\\', '{', '}', '(', ')'])}]+`),
     },
 });

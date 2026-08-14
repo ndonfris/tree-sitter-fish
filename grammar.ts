@@ -29,6 +29,7 @@ const WORD_START_NEG_PATTERN = regexChars([
     ';',
     '\\',
     '\\s',
+    '=',
 ]);
 // Set of characters that cannot continue a word.
 const WORD_CONTINUE_NEG_PATTERN = regexChars([
@@ -45,6 +46,7 @@ const WORD_CONTINUE_NEG_PATTERN = regexChars([
     ';',
     '\\',
     '\\s',
+    '=',
 ]);
 
 const WORD_PATTERN = new RegExp(`[^${WORD_START_NEG_PATTERN}][^${WORD_CONTINUE_NEG_PATTERN}]*`);
@@ -57,6 +59,7 @@ module.exports = grammar({
         $._brace_concat,
         $._concat_list,
         $._begin_brace,
+        $._variable_assignment_name,
     ],
 
     inline: $ => [
@@ -318,7 +321,19 @@ module.exports = grammar({
             /c[a-zA-Z]?/,
         )))),
 
+        variable_assignment: $ => seq(
+            field('variable_name', alias($._variable_assignment_name, $.word)),
+            token.immediate('='),
+            optional(seq(
+                // The existing zero-width concat marker verifies that a value
+                // starts immediately after `=`; whitespace means an empty value.
+                $._concat,
+                field('value', $._expression),
+            )),
+        ),
+
         command: $ => prec.right(seq(
+            repeat($.variable_assignment),
             field('name', $._expression),
             repeat(choice(
                 field('redirect', choice($.file_redirect, $.stream_redirect)),
@@ -396,7 +411,10 @@ module.exports = grammar({
 
         glob: () => token(repeat1('*')),
 
-        word: () => WORD_PATTERN,
+        // Equality operators remain ordinary words for Fish's `test` and `[`
+        // commands, while `=` stays excluded from all other word contents so
+        // assignment boundaries remain structured.
+        word: () => token(choice('!=', '=', WORD_PATTERN)),
 
         brace_word: () => new RegExp(`[^${
             regexChars(['$', '\'', '*', '"', ',', '\\', '{', '}', '(', ')'])

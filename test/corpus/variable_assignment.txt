@@ -1,0 +1,42 @@
+================================================================================
+Variable Assignment - verify before a command
+================================================================================
+
+variable_name=value other_var="$(value 2)" cmd
+EMPTY= cmd argument
+MIXED=prefix$var ESCAPED=hello\ world run
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    (variable_assignment
+      variable_name: (word)
+      value: (word))
+    (variable_assignment
+      variable_name: (word)
+      value: (double_quote_string
+        (command_substitution
+          (command
+            name: (word)
+            argument: (integer)))))
+    name: (word))
+  (command
+    (variable_assignment
+      variable_name: (word))
+    name: (word)
+    argument: (word))
+  (command
+    (variable_assignment
+      variable_name: (word)
+      value: (concatenation
+        (word)
+        (variable_expansion
+          (variable_name))))
+    (variable_assignment
+      variable_name: (word)
+      value: (concatenation
+        (word)
+        (escape_sequence)
+        (word)))
+    name: (word)))

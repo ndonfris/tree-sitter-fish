@@ -6,6 +6,7 @@ enum TokenType {
     BRACKET_CONCAT,
     CONCAT_LIST,
     BEGIN_BRACE,
+    VARIABLE_ASSIGNMENT_NAME,
 };
 
 void *tree_sitter_fish_external_scanner_create() { return NULL; }
@@ -74,6 +75,29 @@ bool tree_sitter_fish_external_scanner_scan(
         )) {
             lexer->result_symbol = BRACKET_CONCAT;
             return true;
+        }
+    }
+
+    if (valid_symbols[VARIABLE_ASSIGNMENT_NAME]) {
+        while (iswspace(lexer->lookahead)) {
+            lexer->advance(lexer, true);
+        }
+
+        if (iswalnum(lexer->lookahead) || lexer->lookahead == '_') {
+            lexer->advance(lexer, false);
+            while (
+                iswalnum(lexer->lookahead) ||
+                lexer->lookahead == '_' ||
+                lexer->lookahead == '-'
+            ) {
+                lexer->advance(lexer, false);
+            }
+
+            if (lexer->lookahead == '=') {
+                lexer->mark_end(lexer);
+                lexer->result_symbol = VARIABLE_ASSIGNMENT_NAME;
+                return true;
+            }
         }
     }
 

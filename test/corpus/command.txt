@@ -87,3 +87,31 @@ do_sth -- +test +q -nest start
     argument: (word)
     argument: (word)
     argument: (word)))
+
+================================================================================
+Command - Test equals signs remain valid command arguments
+================================================================================
+
+test left != right
+test left = right
+cmd --option=value
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    argument: (word)
+    argument: (word)
+    argument: (word))
+  (command
+    name: (word)
+    argument: (word)
+    argument: (word)
+    argument: (word))
+  (command
+    name: (word)
+    argument: (concatenation
+      (word)
+      (word)
+      (word))))

@@ -27,6 +27,12 @@
   name: (word) @punctuation.bracket (#match? @punctuation.bracket "^\\[$")
   argument: (word) @operator (#match? @operator "^(!?=|-[a-zA-Z]+)$"))
 
+(variable_assignment
+  variable_name: (word) @variable)
+
+(variable_assignment
+  "=" @operator)
+
 (variable_expansion) @constant
 
 (command_substitution "$" @punctuation.special)
