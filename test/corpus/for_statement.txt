@@ -71,3 +71,31 @@ end;
     value: (variable_expansion
       (variable_name))
     (continue)))
+
+================================================================================
+For Statement - continued value list
+================================================================================
+
+for head in HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD REBASE_HEAD REVERT_HEAD \
+    CHERRY_PICK_HEAD BISECT_HEAD AUTO_MERGE
+    echo $head
+end
+
+--------------------------------------------------------------------------------
+
+(program
+  (for_statement
+    variable: (variable_name)
+    value: (word)
+    value: (word)
+    value: (word)
+    value: (word)
+    value: (word)
+    value: (word)
+    value: (word)
+    value: (word)
+    value: (word)
+    (command
+      name: (word)
+      argument: (variable_expansion
+        (variable_name)))))

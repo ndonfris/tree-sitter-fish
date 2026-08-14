@@ -368,6 +368,10 @@
       "required": false,
       "types": [
         {
+          "type": "comment",
+          "named": true
+        },
+        {
           "type": "variable_assignment",
           "named": true
         }
@@ -879,7 +883,7 @@
     "fields": {
       "value": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
             "type": "brace_expansion",
@@ -956,6 +960,10 @@
         },
         {
           "type": "command",
+          "named": true
+        },
+        {
+          "type": "comment",
           "named": true
         },
         {
@@ -1132,6 +1140,10 @@
         },
         {
           "type": "command",
+          "named": true
+        },
+        {
+          "type": "comment",
           "named": true
         },
         {
@@ -1474,6 +1486,10 @@
         },
         {
           "type": "command",
+          "named": true
+        },
+        {
+          "type": "comment",
           "named": true
         },
         {
@@ -2146,6 +2162,10 @@
   },
   {
     "type": "[",
+    "named": false
+  },
+  {
+    "type": "\\",
     "named": false
   },
   {

@@ -1,0 +1,106 @@
+================================================================================
+Line Continuation - command with comments
+================================================================================
+
+cmd \
+   # first comment
+   # second comment
+   --flag \
+   # third comment
+   argument
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    name: (word)
+    (comment)
+    (comment)
+    argument: (word)
+    (comment)
+    argument: (word)))
+
+================================================================================
+Line Continuation - Variable Assignments continued before a command
+================================================================================
+
+FIRST=one \
+  SECOND=two \
+  command argument
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    (variable_assignment
+      variable_name: (word)
+      value: (word))
+    (variable_assignment
+      variable_name: (word)
+      value: (word))
+    name: (word)
+    argument: (word)))
+
+================================================================================
+Line Continuation - verify around pipes
+================================================================================
+
+first \
+   # before the pipe
+   | second | \
+   # after the pipe
+   # the backslash is continuation syntax, not a command name
+   third
+
+--------------------------------------------------------------------------------
+
+(program
+  (pipe
+    (pipe
+      (command
+        name: (word)
+        (comment))
+      (command
+        name: (word)))
+    (comment)
+    (comment)
+    (command
+      name: (word))))
+
+
+================================================================================
+Line Continuation - Operator with comments after a continuation remains in the pipe
+================================================================================
+
+set (
+    echo 1 \
+    | string trim )
+set (
+    echo 1 \
+    # This comment remains inside the pipe node
+    | string trim )
+
+--------------------------------------------------------------------------------
+
+(program
+  (command
+    (word)
+    (command_substitution
+      (pipe
+        (command
+          (word)
+          (integer))
+        (command
+          (word)
+          (word)))))
+  (command
+    (word)
+    (command_substitution
+      (pipe
+        (command
+          (word)
+          (integer)
+          (comment))
+        (command
+          (word)
+          (word))))))
